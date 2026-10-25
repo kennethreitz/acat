@@ -1,0 +1,22 @@
+[project]
+name = "acat"
+version = "0.1.0"
+description = "audio $ cat: play audio files the way cat prints text."
+readme = "README.md"
+authors = [
+    { name = "Kenneth Reitz", email = "me@kennethreitz.org" }
+]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+acat = "acat.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.25,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
