@@ -6,10 +6,15 @@
 $ acat song.mp3
 $ acat intro.wav verse.mp3 outro.flac   # one after another, like cat
 $ curl -s https://example.com/beep.wav | acat
+$ acat talk.mp4                         # videos too: plays the audio track
 ```
 
 No dependencies, no config, no fuss. acat finds a player you already have
 (`afplay` on macOS, then `ffplay`, `mpv`, `paplay`, or `aplay`) and gets out of the way.
+
+Videos (mp4, mov, mkv, webm, avi, m4v, and friends) play their audio
+through `ffplay` or `mpv` when present; otherwise acat extracts the audio
+with `ffmpeg` to a temp file and plays that. No ffmpeg, no video.
 
 ## Usage
 

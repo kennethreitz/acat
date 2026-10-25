@@ -88,3 +88,46 @@ def test_list_backends(capsys):
         assert cli.main(["--list-backends"]) == 0
     out = capsys.readouterr().out
     assert "mpv\tyes" in out and "afplay\tno" in out
+
+
+@pytest.fixture
+def video(tmp_path):
+    p = tmp_path / "clip.MP4"
+    p.write_bytes(b"fake")
+    return str(p)
+
+
+def test_video_prefers_ffplay(video):
+    with mock.patch.object(cli, "find_backend", return_value=AFPLAY), \
+         mock.patch("shutil.which", side_effect=lambda c: c == "ffplay"), \
+         mock.patch("subprocess.run", side_effect=run_ok) as run:
+        assert cli.main([video]) == 0
+    cmd = run.call_args.args[0]
+    assert cmd[0] == "ffplay" and "-nodisp" in cmd and cmd[-1] == video
+
+
+def test_video_extracts_with_ffmpeg_and_cleans_up(video):
+    import os
+    calls = []
+
+    def fake_run(cmd, **k):
+        calls.append(cmd)
+        return mock.Mock(returncode=0)
+
+    with mock.patch.object(cli, "find_backend", return_value=AFPLAY), \
+         mock.patch("shutil.which", side_effect=lambda c: c == "ffmpeg"), \
+         mock.patch("subprocess.run", side_effect=fake_run):
+        assert cli.main([video]) == 0
+    assert calls[0][0] == "ffmpeg" and video in calls[0]
+    wav = calls[1][-1]
+    assert calls[1][0] == "afplay" and wav.endswith(".wav")
+    assert not os.path.exists(wav)
+
+
+def test_video_without_ffmpeg(video, capsys):
+    with mock.patch.object(cli, "find_backend", return_value=AFPLAY), \
+         mock.patch("shutil.which", return_value=None), \
+         mock.patch("subprocess.run") as run:
+        assert cli.main([video]) == 1
+    run.assert_not_called()
+    assert "needs ffmpeg" in capsys.readouterr().err

@@ -34,6 +34,42 @@ def find_backend() -> list[str] | None:
     return None
 
 
+VIDEO_EXTS = {
+    ".mp4", ".m4v", ".mov", ".mkv", ".webm", ".avi", ".wmv", ".flv",
+    ".mpg", ".mpeg", ".ts", ".m2ts", ".3gp", ".ogv",
+}
+
+# Players that can pull the audio straight out of a video file.
+VIDEO_BACKENDS = ("ffplay", "mpv")
+
+
+def is_video(path: str) -> bool:
+    return os.path.splitext(path)[1].lower() in VIDEO_EXTS
+
+
+def video_backend() -> list[str] | None:
+    """A backend that plays video audio directly, or None."""
+    for name, cmd in BACKENDS:
+        if name in VIDEO_BACKENDS and shutil.which(cmd[0]):
+            return list(cmd)
+    return None
+
+
+def extract_audio(path: str) -> str | None:
+    """Pull a video's audio track into a temp WAV with ffmpeg. None on failure."""
+    fd, out = tempfile.mkstemp(prefix="acat-", suffix=".wav")
+    os.close(fd)
+    result = subprocess.run(
+        ["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-i", path,
+         "-vn", out],
+        stdout=subprocess.DEVNULL,
+    )
+    if result.returncode != 0:
+        os.unlink(out)
+        return None
+    return out
+
+
 def play(path: str, backend: list[str], quiet: bool = False) -> int:
     """Play one file. Returns the backend's exit code."""
     out = subprocess.DEVNULL if quiet else None
@@ -56,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
         description="Play audio files in sequence, the way cat prints text.",
     )
     parser.add_argument("files", nargs="*", metavar="FILE",
-                        help="audio files to play ('-' or nothing reads stdin)")
+                        help="audio or video files to play ('-' or nothing reads stdin)")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="hide the player's own output")
     parser.add_argument("--list-backends", action="store_true",
@@ -88,7 +124,25 @@ def main(argv: list[str] | None = None) -> int:
                 error(f"{path}: No such file")
                 status = 1
                 continue
-            if play(path, backend, args.quiet) != 0:
+            player = backend
+            if path not in temps and is_video(path):
+                direct = video_backend()
+                if direct:
+                    player = direct
+                elif shutil.which("ffmpeg"):
+                    extracted = extract_audio(path)
+                    if extracted is None:
+                        error(f"{path}: could not read audio from video")
+                        status = 1
+                        continue
+                    temps.append(extracted)
+                    path = extracted
+                else:
+                    error(f"{path}: playing video needs ffmpeg "
+                          "(try: brew install ffmpeg)")
+                    status = 1
+                    continue
+            if play(path, player, args.quiet) != 0:
                 error(f"{path}: could not play")
                 status = 1
     except KeyboardInterrupt:
