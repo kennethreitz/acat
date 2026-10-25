@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 
-from . import __version__
+from . import __version__, player
 
 # Backends in order of preference: (name, command prefix).
 BACKENDS = [
@@ -86,6 +86,25 @@ def error(msg: str) -> None:
     print(f"acat: {msg}", file=sys.stderr)
 
 
+def play_ui(files: list[str]) -> int:
+    """Interactive mode: progress bar and controls, n/p moves between files."""
+    status, i = 0, 0
+    while 0 <= i < len(files):
+        path = files[i]
+        if not os.path.isfile(path):
+            error(f"{path}: No such file")
+            status = 1
+            i += 1
+            continue
+        action = player.play_interactive(path)
+        if action == "interrupt":
+            return 130
+        if action == "quit":
+            return status
+        i = max(0, i - 1) if action == "prev" else i + 1
+    return status
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="acat",
@@ -107,6 +126,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{name}\t{'yes' if name in found else 'no'}")
         return 0 if found else 1
 
+    files = args.files or ["-"]
+    if (not args.quiet and "-" not in files and sys.stdin.isatty()
+            and sys.stderr.isatty() and player.available()):
+        return play_ui(files)
+
     backend = find_backend()
     if backend is None:
         error("no audio player found. Install one of: "
@@ -116,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
     status = 0
     temps: list[str] = []
     try:
-        for path in args.files or ["-"]:
+        for path in files:
             if path == "-":
                 path = _stdin_to_tempfile()
                 temps.append(path)
@@ -124,11 +148,11 @@ def main(argv: list[str] | None = None) -> int:
                 error(f"{path}: No such file")
                 status = 1
                 continue
-            player = backend
+            cmd = backend
             if path not in temps and is_video(path):
                 direct = video_backend()
                 if direct:
-                    player = direct
+                    cmd = direct
                 elif shutil.which("ffmpeg"):
                     extracted = extract_audio(path)
                     if extracted is None:
@@ -142,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
                           "(try: brew install ffmpeg)")
                     status = 1
                     continue
-            if play(path, player, args.quiet) != 0:
+            if play(path, cmd, args.quiet) != 0:
                 error(f"{path}: could not play")
                 status = 1
     except KeyboardInterrupt:

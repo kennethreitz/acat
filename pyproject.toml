@@ -7,7 +7,10 @@ authors = [
     { name = "Kenneth Reitz", email = "me@kennethreitz.org" }
 ]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "numpy>=2.2.6",
+    "sounddevice>=0.5.6",
+]
 
 [project.scripts]
 acat = "acat.cli:main"

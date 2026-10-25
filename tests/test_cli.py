@@ -131,3 +131,70 @@ def test_video_without_ffmpeg(video, capsys):
         assert cli.main([video]) == 1
     run.assert_not_called()
     assert "needs ffmpeg" in capsys.readouterr().err
+
+
+# --- interactive player -------------------------------------------------
+
+from acat import player
+
+
+def test_fmt():
+    assert player.fmt(0) == "0:00"
+    assert player.fmt(75.9) == "1:15"
+    assert player.fmt(3725) == "1:02:05"
+
+
+def test_progress_line():
+    line = player.progress_line(30, 60, True, 1.0, bar_w=10)
+    assert "▶ 0:30 / 1:00" in line and "█████░░░░░" in line and "vol 100%" in line
+    assert "⏸" in player.progress_line(0, 0, False, 0.5)
+    assert "?:??" in player.progress_line(0, 0, False, 0.5)
+
+
+def test_read_key_arrows():
+    import os
+    r, w = os.pipe()
+    os.write(w, b"\x1b[C q")
+    assert player.read_key(r, 0.1) == "right"
+    assert player.read_key(r, 0.1) == " "
+    assert player.read_key(r, 0.1) == "q"
+    assert player.read_key(r, 0.01) is None
+    os.close(r); os.close(w)
+
+
+def test_ui_used_on_tty(song, tmp_path):
+    other = str(tmp_path / "b.mp4"); open(other, "w").close()
+    seen = []
+    actions = iter(["next", "prev", "done", "done"])
+
+    def fake(path):
+        seen.append(path)
+        return next(actions)
+
+    with mock.patch.object(player, "available", return_value=True), \
+         mock.patch.object(player, "play_interactive", side_effect=fake), \
+         mock.patch.object(cli.sys, "stdin", mock.Mock(isatty=lambda: True)), \
+         mock.patch.object(cli.sys, "stderr", mock.Mock(isatty=lambda: True)):
+        assert cli.main([song, other]) == 0
+    assert seen == [song, other, song, other]
+
+
+def test_ui_quit_and_interrupt(song):
+    with mock.patch.object(player, "available", return_value=True), \
+         mock.patch.object(cli.sys, "stdin", mock.Mock(isatty=lambda: True)), \
+         mock.patch.object(cli.sys, "stderr", mock.Mock(isatty=lambda: True)):
+        with mock.patch.object(player, "play_interactive", return_value="quit"):
+            assert cli.main([song, song]) == 0
+        with mock.patch.object(player, "play_interactive", return_value="interrupt"):
+            assert cli.main([song]) == 130
+
+
+def test_quiet_skips_ui(song):
+    with mock.patch.object(player, "available", return_value=True), \
+         mock.patch.object(player, "play_interactive") as ui, \
+         mock.patch.object(cli.sys, "stdin", mock.Mock(isatty=lambda: True)), \
+         mock.patch.object(cli.sys, "stderr", mock.Mock(isatty=lambda: True)), \
+         mock.patch.object(cli, "find_backend", return_value=AFPLAY), \
+         mock.patch("subprocess.run", side_effect=run_ok):
+        assert cli.main(["-q", song]) == 0
+    ui.assert_not_called()
