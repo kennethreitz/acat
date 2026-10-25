@@ -218,7 +218,7 @@ def test_version_flags(capsys):
         with pytest.raises(SystemExit) as e:
             cli.main([flag])
         assert e.value.code == 0
-        assert capsys.readouterr().out.strip() == "acat 0.1.0"
+        assert capsys.readouterr().out.strip() == f"acat {__version__}"
 
 
 @pytest.mark.parametrize("platform,tools,expected", [

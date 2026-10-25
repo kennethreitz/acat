@@ -1,6 +1,6 @@
 [project]
 name = "acat-player"
-version = "0.1.0"
+version = "0.1.1"
 description = "audio $ cat: play audio files the way cat prints text."
 readme = "README.md"
 license = "ISC"
