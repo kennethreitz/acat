@@ -82,6 +82,28 @@ def _stdin_to_tempfile() -> str:
         return f.name
 
 
+LINUX_INSTALL = [
+    ("apt", "sudo apt install ffmpeg"),
+    ("dnf", "sudo dnf install ffmpeg"),
+    ("pacman", "sudo pacman -S ffmpeg"),
+    ("zypper", "sudo zypper install ffmpeg"),
+    ("apk", "sudo apk add ffmpeg"),
+]
+
+
+def ffmpeg_install_hint() -> str:
+    """How to get ffmpeg on this machine, as a short phrase."""
+    if sys.platform == "darwin" and shutil.which("brew"):
+        return "Install it with: brew install ffmpeg"
+    if sys.platform.startswith("linux"):
+        for tool, cmd in LINUX_INSTALL:
+            if shutil.which(tool):
+                return f"Install it with: {cmd}"
+    if sys.platform == "win32":
+        return "Install it with: winget install ffmpeg"
+    return "Get it at https://ffmpeg.org/download.html"
+
+
 def error(msg: str) -> None:
     print(f"acat: {msg}", file=sys.stderr)
 
@@ -128,8 +150,12 @@ def main(argv: list[str] | None = None) -> int:
 
     files = args.files or ["-"]
     if (not args.quiet and "-" not in files and sys.stdin.isatty()
-            and sys.stderr.isatty() and player.available()):
-        return play_ui(files)
+            and sys.stderr.isatty()):
+        if player.available():
+            return play_ui(files)
+        if not shutil.which("ffmpeg"):
+            error("ffmpeg not found, so no progress bar or controls. "
+                  + ffmpeg_install_hint())
 
     backend = find_backend()
     if backend is None:
@@ -162,8 +188,8 @@ def main(argv: list[str] | None = None) -> int:
                     temps.append(extracted)
                     path = extracted
                 else:
-                    error(f"{path}: playing video needs ffmpeg "
-                          "(try: brew install ffmpeg)")
+                    error(f"{path}: playing video needs ffmpeg. "
+                          + ffmpeg_install_hint())
                     status = 1
                     continue
             if play(path, cmd, args.quiet) != 0:

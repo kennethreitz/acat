@@ -219,3 +219,39 @@ def test_version_flags(capsys):
             cli.main([flag])
         assert e.value.code == 0
         assert capsys.readouterr().out.strip() == "acat 0.1.0"
+
+
+@pytest.mark.parametrize("platform,tools,expected", [
+    ("darwin", {"brew"}, "brew install ffmpeg"),
+    ("darwin", set(), "https://ffmpeg.org/download.html"),
+    ("linux", {"dnf"}, "sudo dnf install ffmpeg"),
+    ("linux", {"apt", "dnf"}, "sudo apt install ffmpeg"),
+    ("linux", set(), "https://ffmpeg.org/download.html"),
+    ("win32", set(), "winget install ffmpeg"),
+])
+def test_ffmpeg_install_hint(platform, tools, expected):
+    with mock.patch.object(cli.sys, "platform", platform), \
+         mock.patch("shutil.which", side_effect=lambda c: c in tools):
+        assert expected in cli.ffmpeg_install_hint()
+
+
+def test_hint_on_tty_without_ffmpeg(song, capsys):
+    with mock.patch.object(player, "available", return_value=False), \
+         mock.patch.object(cli.sys, "stdin", mock.Mock(isatty=lambda: True)), \
+         mock.patch.object(cli, "find_backend", return_value=AFPLAY), \
+         mock.patch.object(cli, "ffmpeg_install_hint", return_value="HINT"), \
+         mock.patch("shutil.which", return_value=None), \
+         mock.patch("subprocess.run", side_effect=run_ok):
+        cli.sys.stderr.isatty = lambda: True
+        assert cli.main([song]) == 0
+        err = capsys.readouterr().err
+    assert err.count("ffmpeg not found, so no progress bar or controls. HINT") == 1
+
+
+def test_no_hint_when_quiet(song, capsys):
+    with mock.patch.object(player, "available", return_value=False), \
+         mock.patch.object(cli, "find_backend", return_value=AFPLAY), \
+         mock.patch("shutil.which", return_value=None), \
+         mock.patch("subprocess.run", side_effect=run_ok):
+        assert cli.main(["-q", song]) == 0
+    assert "ffmpeg" not in capsys.readouterr().err
