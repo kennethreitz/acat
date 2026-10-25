@@ -1,5 +1,5 @@
 [project]
-name = "acat"
+name = "acat-player"
 version = "0.1.0"
 description = "audio $ cat: play audio files the way cat prints text."
 readme = "README.md"
@@ -24,3 +24,6 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.1.1",
 ]
+
+[tool.uv.build-backend]
+module-name = "acat"

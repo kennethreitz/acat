@@ -17,10 +17,10 @@ $ acat song.mp3
 ## Install
 
 ```console
-$ uv tool install git+https://github.com/kennethreitz/acat
+$ uv tool install acat-player
 ```
 
-Or `pipx install git+https://github.com/kennethreitz/acat`.
+Or `pipx install acat-player`. The command is `acat`.
 
 acat uses [ffmpeg](https://ffmpeg.org) for the player and for video
 (`brew install ffmpeg`, `apt install ffmpeg`).
