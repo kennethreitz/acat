@@ -26,6 +26,9 @@ CONTROLS = ("[←/→] ∓5s  [a/d] ∓30s  [space] pause  [↑/↓] volume  "
             "[n] next  [p] prev  [q] quit")
 
 
+CLEAR = "\r\033[2K\033[1A\r\033[2K"  # wipe both UI lines, cursor at top
+
+
 def frame(progress: str, first: bool) -> str:
     """Redraw the two-line UI in place: progress, then controls beneath."""
     up = "" if first else "\033[1A"
@@ -177,7 +180,6 @@ def play_interactive(path: str) -> str:
     s = Stream(path)
     s._spawn(0)
 
-    print(f"\n  {os.path.basename(path)}", file=sys.stderr)
 
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
@@ -232,5 +234,11 @@ def play_interactive(path: str) -> str:
         stream.stop()
         stream.close()
         s.close()
-        sys.stderr.write("\n")
+        if first:
+            pass
+        elif action in ("quit", "interrupt"):
+            sys.stderr.write("\n")  # leave the final bar on screen
+        else:
+            sys.stderr.write(CLEAR)  # erase, so the next bar takes its place
+        sys.stderr.flush()
     return action

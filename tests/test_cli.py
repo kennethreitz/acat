@@ -207,3 +207,7 @@ def test_controls_under_progress():
     assert first.index("BAR") < first.index(player.CONTROLS)
     assert "\033[1A" not in first
     assert player.frame("BAR", False).startswith("\033[1A\r\033[2K")
+
+
+def test_clear_wipes_both_lines():
+    assert player.CLEAR.count("\033[2K") == 2 and "\033[1A" in player.CLEAR

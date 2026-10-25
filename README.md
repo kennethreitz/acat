@@ -13,7 +13,6 @@ In a terminal, acat shows a progress bar with elapsed / total time and
 takes a few keys:
 
 ```
-  $requests token [1MJgNbkrgYbGL].mp4
   ▶ 0:36 / 46:52  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  vol 100%
   [←/→] ∓5s  [a/d] ∓30s  [space] pause  [↑/↓] volume  [n] next  [p] prev  [q] quit
 ```
