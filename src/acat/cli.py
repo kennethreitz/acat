@@ -116,7 +116,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="hide the player's own output")
     parser.add_argument("--list-backends", action="store_true",
                         help="show which players acat can use, then exit")
-    parser.add_argument("--version", action="version",
+    parser.add_argument("-V", "--version", action="version",
                         version=f"acat {__version__}")
     args = parser.parse_args(argv)
 

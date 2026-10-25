@@ -211,3 +211,11 @@ def test_controls_under_progress():
 
 def test_clear_wipes_both_lines():
     assert player.CLEAR.count("\033[2K") == 2 and "\033[1A" in player.CLEAR
+
+
+def test_version_flags(capsys):
+    for flag in ("--version", "-V"):
+        with pytest.raises(SystemExit) as e:
+            cli.main([flag])
+        assert e.value.code == 0
+        assert capsys.readouterr().out.strip() == "acat 0.1.0"
