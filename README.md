@@ -1,48 +1,56 @@
+<div align="center">
+
 # acat
 
-**audio $ cat.** `cat` prints files. `acat` plays them.
+**`cat` prints files. `acat` plays them.**
+
+Audio and video in your terminal, for humans.
+
+</div>
 
 ```console
 $ acat song.mp3
-$ acat intro.wav verse.mp3 outro.flac   # one after another, like cat
-$ curl -s https://example.com/beep.wav | acat
-$ acat talk.mp4                         # videos too: plays the audio track
-```
-
-In a terminal, acat shows a progress bar with elapsed / total time and
-takes a few keys:
-
-```
-  ▶ 0:36 / 46:52  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  vol 100%
+  ▶ 1:42 / 3:58  ███████████████████░░░░░░░░░░░░░░░░░░░░░  vol 100%
   [←/→] ∓5s  [a/d] ∓30s  [space] pause  [↑/↓] volume  [n] next  [p] prev  [q] quit
 ```
-
-That mode decodes with `ffmpeg` and plays through `sounddevice`, so it
-needs ffmpeg installed (`brew install ffmpeg`). Without ffmpeg, with `-q`,
-or when piped (stdin or a non-terminal), acat stays plain: it finds a
-player you already have (`afplay` on macOS, then `ffplay`, `mpv`,
-`paplay`, or `aplay`) and gets out of the way.
-
-Videos (mp4, mov, mkv, webm, avi, m4v, and friends) play their audio
-through `ffplay` or `mpv` when present; otherwise acat extracts the audio
-with `ffmpeg` to a temp file and plays that. No ffmpeg, no video.
-
-## Usage
-
-```
-acat [-q] FILE...     play files in order (-q: no progress bar or controls) ('-' or no files reads stdin)
-acat --list-backends  show which players acat can use
-acat --version
-```
-
-`q` stops (exit 0); Ctrl-C stops (exit 130). A missing or unplayable file prints an
-error and exits nonzero, after playing the rest.
 
 ## Install
 
 ```console
-$ uv tool install .
+$ uv tool install git+https://github.com/kennethreitz/acat
 ```
+
+Or `pipx install git+https://github.com/kennethreitz/acat`.
+
+acat uses [ffmpeg](https://ffmpeg.org) for the player and for video
+(`brew install ffmpeg`, `apt install ffmpeg`).
+
+## Usage
+
+```console
+$ acat song.mp3                          # play a file
+$ acat talk.mp4                          # videos play their audio track
+$ acat intro.wav verse.mp3 outro.flac    # one after another, like cat
+$ curl -s https://example.com/beep.wav | acat
+$ acat -q song.mp3                       # no bar, no controls, just sound
+```
+
+Anything ffmpeg can read works: mp3, wav, flac, m4a, ogg, mp4, mov, mkv,
+webm, avi, and friends.
+
+## Controls
+
+| Key | Does |
+| --- | --- |
+| `space` | pause / resume |
+| `←` `→` | back / forward 5s |
+| `a` `d` | back / forward 30s |
+| `↑` `↓` | volume |
+| `n` `p` | next / previous file |
+| `q` | quit |
+
+When piped, quiet, or without ffmpeg, acat falls back to a player you
+already have (`afplay`, `ffplay`, `mpv`, `paplay`, or `aplay`) and just plays.
 
 ## Development
 
@@ -50,4 +58,6 @@ $ uv tool install .
 $ uv run pytest
 ```
 
-MIT licensed. Made for humans, and their ears.
+## License
+
+ISC. Made for humans, and their ears.

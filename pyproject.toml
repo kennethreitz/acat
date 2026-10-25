@@ -3,6 +3,7 @@ name = "acat"
 version = "0.1.0"
 description = "audio $ cat: play audio files the way cat prints text."
 readme = "README.md"
+license = "ISC"
 authors = [
     { name = "Kenneth Reitz", email = "me@kennethreitz.org" }
 ]
