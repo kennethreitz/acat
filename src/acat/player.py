@@ -22,8 +22,14 @@ CHUNK = 2048  # frames per read from ffmpeg
 SEEK = 5
 BIG_SEEK = 30
 
-CONTROLS = ("  [←/→] ∓5s  [a/d] ∓30s  [space] pause  [↑/↓] volume  "
+CONTROLS = ("[←/→] ∓5s  [a/d] ∓30s  [space] pause  [↑/↓] volume  "
             "[n] next  [p] prev  [q] quit")
+
+
+def frame(progress: str, first: bool) -> str:
+    """Redraw the two-line UI in place: progress, then controls beneath."""
+    up = "" if first else "\033[1A"
+    return f"{up}\r\033[2K{progress}\n\r\033[2K  {CONTROLS}"
 
 
 def available() -> bool:
@@ -172,11 +178,11 @@ def play_interactive(path: str) -> str:
     s._spawn(0)
 
     print(f"\n  {os.path.basename(path)}", file=sys.stderr)
-    print(CONTROLS, file=sys.stderr)
 
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
     action = "done"
+    first = True
     stream = sd.OutputStream(samplerate=RATE, channels=CHANNELS,
                              dtype="float32", blocksize=1024,
                              callback=s.callback)
@@ -187,7 +193,8 @@ def play_interactive(path: str) -> str:
             with s.lock:
                 cur, playing, vol, done = (s.pos / RATE, s.playing,
                                            s.volume, s.done)
-            sys.stderr.write("\r" + progress_line(cur, total, playing, vol))
+            sys.stderr.write(frame(progress_line(cur, total, playing, vol), first))
+            first = False
             sys.stderr.flush()
             if done:
                 break

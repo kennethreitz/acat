@@ -14,8 +14,8 @@ takes a few keys:
 
 ```
   $requests token [1MJgNbkrgYbGL].mp4
-  [←/→] ∓5s  [a/d] ∓30s  [space] pause  [↑/↓] volume  [n] next  [p] prev  [q] quit
   ▶ 0:36 / 46:52  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  vol 100%
+  [←/→] ∓5s  [a/d] ∓30s  [space] pause  [↑/↓] volume  [n] next  [p] prev  [q] quit
 ```
 
 That mode decodes with `ffmpeg` and plays through `sounddevice`, so it

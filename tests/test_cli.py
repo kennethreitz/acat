@@ -198,3 +198,12 @@ def test_quiet_skips_ui(song):
          mock.patch("subprocess.run", side_effect=run_ok):
         assert cli.main(["-q", song]) == 0
     ui.assert_not_called()
+
+
+def test_controls_under_progress():
+    assert player.CONTROLS == ("[←/→] ∓5s  [a/d] ∓30s  [space] pause  "
+                               "[↑/↓] volume  [n] next  [p] prev  [q] quit")
+    first = player.frame("BAR", True)
+    assert first.index("BAR") < first.index(player.CONTROLS)
+    assert "\033[1A" not in first
+    assert player.frame("BAR", False).startswith("\033[1A\r\033[2K")
